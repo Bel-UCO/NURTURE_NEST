@@ -1,0 +1,24 @@
+/register
+
+{
+  "username": "testuser",
+  "password": "testpass",
+  "name": "Test User",
+  "email": "testuser@example.com"
+}
+
+
+/login
+
+{
+  "username": "testuser",
+  "password": "testpass"
+}
+
+untuk add data notes_history ke tabel
+
+curl -X POST http://localhost:3000/notes -F "id_kids=12345678" \
+     -F "id_daycare=000000000000001" -F "caretaker=John Doe" \
+     -F "notes=Child was very active and happy today." \
+     -F "note_image=@/home/user/myapp/assets/dummy_image/notes1.png" \
+     -F "note_image_name=notes1.png"

@@ -1,0 +1,33 @@
+POST http://localhost:3000/notes
+Content-Type: multipart/form-data
+
+--BOUNDARY
+Content-Disposition: form-data; name="id_kids"
+
+12345678
+--BOUNDARY
+Content-Disposition: form-data; name="id_daycare"
+
+000000000000001
+--BOUNDARY
+Content-Disposition: form-data; name="notes_date"
+
+2024-10-29
+--BOUNDARY
+Content-Disposition: form-data; name="caretaker"
+
+John Doe
+--BOUNDARY
+Content-Disposition: form-data; name="notes"
+
+Child was very active and happy today.
+--BOUNDARY
+Content-Disposition: form-data; name="note_image"; filename="notes1.png"
+Content-Type: image/png
+
+<home/user/myapp/assets/dummy_image>
+--BOUNDARY
+Content-Disposition: form-data; name="note_image_name"
+
+notes1.png
+--BOUNDARY--
