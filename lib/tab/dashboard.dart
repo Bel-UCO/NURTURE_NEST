@@ -204,77 +204,85 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   void _showAccessCodeDialog(BuildContext context, String userId) {
-    final TextEditingController accessCodeController = TextEditingController();
+  final TextEditingController accessCodeController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Enter Access Code'),
-          content: TextField(
-            controller: accessCodeController,
-            decoration: const InputDecoration(hintText: "Access Code"),
-            obscureText: true,
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Enter Access Code'),
+        content: TextField(
+          controller: accessCodeController,
+          decoration: const InputDecoration(hintText: "Access Code"),
+          obscureText: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancel'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
+          TextButton(
+            onPressed: () async {
+              final accessCode = accessCodeController.text;
+
+              // Validasi input
+              if (accessCode.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Access Code cannot be empty')),
+                );
+                return;
+              }
+
+              String? idDaycare = selectedDetails?.idDaycare;
+              if (idDaycare == null || idDaycare.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('ID Daycare is not available')),
+                );
                 Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                final accessCode = accessCodeController.text;
+                return;
+              }
 
-                // Validasi input
-                if (accessCode.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Access Code cannot be empty')),
-                  );
-                  return;
-                }
+              // Ambil URL CCTV dan simpan hasilnya
+              final cctvUrl = await fetchCCTVUrl(idDaycare, accessCode, userId);
+              print('CCTV URL: $cctvUrl'); // Debugging
+              
+              // Tutup dialog sebelum navigasi
+              Navigator.of(context).pop();
 
-                String? idDaycare = selectedDetails?.idDaycare;
-                if (idDaycare == null || idDaycare.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('ID Daycare is not available')),
-                  );
-                  Navigator.of(context).pop();
-                  return;
-                }
+              // Panggil fungsi navigasi ke CCTVPage
+              if (cctvUrl != null && cctvUrl.isNotEmpty) {
+                _navigateToCCTVPage(context, cctvUrl);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('CCTV link not available')),
+                );
+              }
+            },
+            child: const Text('Submit'),
+          ),
+        ],
+      );
+    },
+  );
+}
 
-                final cctvUrl =
-                    await fetchCCTVUrl(idDaycare, accessCode, userId);
-                print('CCTV URL: $cctvUrl'); // Tambahkan ini untuk debugging
-                if (cctvUrl != null && cctvUrl.isNotEmpty) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CCTVPage(videoUrl: cctvUrl),
-                    ),
-                  ).then((_) {
-                    // Pastikan untuk memeriksa jika navigasi berhasil
-                    print('Navigated to CCTVPage with URL: $cctvUrl');
-                  });
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('CCTV link not available')),
-                  );
-                }
+// Fungsi navigasi terpisah untuk membuka halaman CCTV
+void _navigateToCCTVPage(BuildContext context, String cctvUrl) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => CCTVPage(videoUrl: cctvUrl),
+    ),
+  ).then((_) {
+    // Debugging untuk memeriksa apakah navigasi berhasil
+    print('Navigated to CCTVPage with URL: $cctvUrl');
+  });
+}
 
-                // Pindahkan pop ke sini jika tidak ada masalah
-                Navigator.of(context).pop();
-              },
-              child: const Text('Submit'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Future<String?> fetchCCTVUrl(
       String idDaycare, String accessCode, String userId) async {
