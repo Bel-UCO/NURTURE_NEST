@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -52,8 +53,27 @@ type NotesHistory struct {
 }
 
 type Daycare struct {
-	ID   string `json:"id_daycare"`
-	Name string `json:"name_daycare"`
+	ID              string `json:"id_daycare"`
+	Name            string `json:"name_daycare"`
+	BuildingNumber  string `json:"building_number"`
+	Street          string `json:"street"`
+	Village         string `json:"village"`
+	Subdistrict     string `json:"subdistrict"`
+	District        string `json:"district"`
+	Province        string `json:"province"`
+	PostCode        string `json:"post_code"`
+	Phone           string `json:"phone"`
+	Whatsapp        string `json:"whatsapp"`
+	MainImage       string `json:"main_image"`
+	MainImagePath   string `json:"main_image_path"`
+	SecImage        string `json:"main_image"`
+	SecImagePath    string `json:"main_image_path"`
+	ThirdImage      string `json:"main_image"`
+	ThirdImagePath  string `json:"main_image_path"`
+	FourthImage     string `json:"main_image"`
+	FourthImagePath string `json:"main_image_path"`
+	LastImage       string `json:"main_image"`
+	LastImagePath   string `json:"main_image_path"`
 }
 
 type EnrollHistory struct {
@@ -653,6 +673,80 @@ func accessCCTV(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func getDaycareByID(idDaycare string) (*Daycare, error) {
+	var d Daycare
+	err := db.QueryRow("SELECT * FROM daycare WHERE id_daycare = ?", idDaycare).Scan(
+		&d.ID, &d.Name, &d.BuildingNumber, &d.Street, &d.Village,
+		&d.Subdistrict, &d.District, &d.Province, &d.PostCode, &d.Phone,
+		&d.Whatsapp, &d.MainImage, &d.MainImagePath, &d.SecImage, &d.SecImagePath,
+		&d.ThirdImage, &d.ThirdImagePath, &d.FourthImage, &d.FourthImagePath,
+		&d.LastImage, &d.LastImagePath,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // No record found
+		}
+		return nil, err // Other database error
+	}
+	return &d, nil // Return the found daycare
+}
+
+func handleSearchDaycares(c *gin.Context) {
+	// Mengambil parameter "place" dari query string
+	place := c.Query("place")
+	if place == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Place query parameter is required"})
+		return
+	}
+
+	// Pisahkan tempat berdasarkan koma
+	placeList := strings.Split(place, ",")
+	var queryStrings []string
+	var args []interface{}
+
+	for _, p := range placeList {
+		p = strings.TrimSpace(p) // Hapus spasi
+		if p != "" {
+			queryStrings = append(queryStrings, "(name_daycare LIKE ? OR street LIKE ? OR village LIKE ? OR subdistrict LIKE ? OR district LIKE ? OR province LIKE ?)")
+			args = append(args, "%"+p+"%", "%"+p+"%", "%"+p+"%", "%"+p+"%", "%"+p+"%", "%"+p+"%")
+		}
+	}
+
+	// Gabungkan query string
+	query := "SELECT * FROM daycare WHERE " + strings.Join(queryStrings, " OR ")
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	daycareMap := make(map[string]Daycare) // Gunakan map untuk melacak daycare unik
+	for rows.Next() {
+		var d Daycare
+		if err := rows.Scan(
+			&d.ID, &d.Name, &d.BuildingNumber, &d.Street, &d.Village,
+			&d.Subdistrict, &d.District, &d.Province, &d.PostCode, &d.Phone,
+			&d.Whatsapp, &d.MainImage, &d.MainImagePath, &d.SecImage, &d.SecImagePath,
+			&d.ThirdImage, &d.ThirdImagePath, &d.FourthImage, &d.FourthImagePath,
+			&d.LastImage, &d.LastImagePath,
+		); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		daycareMap[d.ID] = d // Simpan daycare di dalam map
+	}
+
+	// Konversi nilai map ke slice
+	var daycares []Daycare
+	for _, daycare := range daycareMap {
+		daycares = append(daycares, daycare)
+	}
+
+	c.JSON(http.StatusOK, daycares) // Kirim respons dengan daftar daycare
+}
+
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -678,6 +772,7 @@ func main() {
 	router.GET("/enroll_history_today/:id_kids", getEnrollHistoryToday)
 	router.POST("/notes", addNote)
 	router.POST("/cctv", accessCCTV)
+	router.GET("/search", handleSearchDaycares)
 
 	// Start the server
 	router.Run(":3000")

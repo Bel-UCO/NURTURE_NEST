@@ -4,7 +4,7 @@ import 'package:video_player/video_player.dart';
 class CCTVPage extends StatefulWidget {
   final String videoUrl;
 
-  const CCTVPage({Key? key, required this.videoUrl}) : super(key: key);
+  const CCTVPage({super.key, required this.videoUrl});
 
   @override
   _CCTVPageState createState() => _CCTVPageState();
