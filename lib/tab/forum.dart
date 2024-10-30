@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'chatpage.dart';
 
 class ForumTab extends StatefulWidget {
   const ForumTab({super.key});
@@ -48,7 +49,12 @@ class _ForumTabState extends State<ForumTab> {
   }
 
   void openChat(String userName) {
-    // TODO: Implementasi membuka chat dengan pengguna
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatPage(userName: userName),
+      ),
+    );
   }
 
   String formatUserName(String name) {
@@ -143,7 +149,6 @@ class _ForumTabState extends State<ForumTab> {
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: users.length,
-                  // Inside the ListView.builder for users
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: () => openChat(users[index]['name']),
@@ -152,8 +157,7 @@ class _ForumTabState extends State<ForumTab> {
                         child: Column(
                           children: [
                             CircleAvatar(
-                              backgroundImage:
-                                  AssetImage(users[index]['image']),
+                              backgroundImage: AssetImage(users[index]['image']),
                               radius: 30,
                             ),
                             SizedBox(height: 4),
@@ -163,8 +167,7 @@ class _ForumTabState extends State<ForumTab> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontSize: 12), // Ukuran font lebih kecil
+                                style: TextStyle(fontSize: 12),
                               ),
                             ),
                           ],
@@ -177,17 +180,13 @@ class _ForumTabState extends State<ForumTab> {
               SizedBox(height: 20),
               // Bagian FORUM
               Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0), // Mengurangi padding vertikal
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: Text(
                   'FORUM',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
-              // List Post
               Expanded(
-                // Ganti SingleChildScrollView dengan Expanded
                 child: ListView.builder(
                   itemCount: posts.length,
                   itemBuilder: (context, index) {
@@ -224,7 +223,6 @@ class _ForumTabState extends State<ForumTab> {
               ),
             ],
           ),
-          // Floating Action Button untuk Create Post
           Positioned(
             bottom: 16,
             right: 16,
@@ -239,3 +237,4 @@ class _ForumTabState extends State<ForumTab> {
     );
   }
 }
+
