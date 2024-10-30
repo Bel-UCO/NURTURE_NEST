@@ -23,9 +23,9 @@ class _BottomTabState extends State<BottomTab>
   ];
 
   static const _kTabs = <Tab>[
-    Tab(icon: Icon(Icons.cloud), text: 'Tab1'),
-    Tab(icon: Icon(Icons.alarm), text: 'Tab2'),
-    Tab(icon: Icon(Icons.forum), text: 'Tab3'),
+    Tab(icon: Icon(Icons.home), text: 'Home'),
+    Tab(icon: Icon(Icons.search), text: 'Search'),
+    Tab(icon: Icon(Icons.forum), text: 'Forum'),
     Tab(
         icon: Icon(Icons.account_circle_sharp),
         text: 'Profile'), // Tab untuk profile
