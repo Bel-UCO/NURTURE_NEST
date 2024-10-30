@@ -84,9 +84,9 @@ type EnrollRequest struct {
 }
 
 type AccessRequest struct {
-	IDUser     string `json:"id_user" binding:"required"`
-	IDDaycare  string `json:"id_daycare" binding:"required"`
-	AccessCode string `json:"access_code" binding:"required"`
+	IDUser     string `json:"id_user" binding`
+	IDDaycare  string `json:"id_daycare" binding`
+	AccessCode string `json:"access_code" binding"`
 }
 
 type AccessResponse struct {

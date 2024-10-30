@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:myapp/user.dart';
 import 'package:myapp/tab/enroll_kids.dart';
+import 'package:myapp/tab/cctv.dart';
 
 class Child {
   final String id;
@@ -14,6 +15,7 @@ class Child {
 
 class EnrollmentDetails {
   final String idKids;
+  final String idDaycare;
   final String enrollDate;
   final String enrollCaretaker;
   final String daycareName;
@@ -32,6 +34,7 @@ class EnrollmentDetails {
 
   EnrollmentDetails({
     required this.idKids,
+    required this.idDaycare,
     required this.enrollDate,
     required this.enrollCaretaker,
     required this.daycareName,
@@ -52,6 +55,7 @@ class EnrollmentDetails {
   factory EnrollmentDetails.fromJson(Map<String, dynamic> json) {
     return EnrollmentDetails(
       idKids: json['id_kids'] ?? '',
+      idDaycare: json['id_daycare'] ?? '',
       enrollDate: json['enroll_date'] ?? '',
       enrollCaretaker: json['enroll_caretaker'] ?? '',
       daycareName: json['name_daycare'] ?? '',
@@ -82,7 +86,7 @@ class _DashboardTabState extends State<DashboardTab> {
   String? selectedKid;
   List<Child> children = [];
   EnrollmentDetails? selectedDetails;
-  List<dynamic> notesToday = []; // Variabel untuk menyimpan catatan hari ini
+  List<dynamic> notesToday = [];
 
   final List<Map<String, dynamic>> items = [
     {'title': 'Check-In', 'icon': Icons.login},
@@ -117,44 +121,33 @@ class _DashboardTabState extends State<DashboardTab> {
     if (userSingleton.user != null) {
       final response = await http.get(
           Uri.parse('http://10.0.2.2:3000/kids/${userSingleton.user!.id}'));
-      print(
-          'Fetching children for user ID: ${userSingleton.user!.id}'); // Debugging line
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
-        print('Children fetched: $jsonResponse'); // Debugging line
         setState(() {
           children = jsonResponse
               .map((child) =>
                   Child(id: child['id_kids'], name: child['name_kids']))
               .toList();
         });
-      } else {
-        print(
-            'Failed to fetch children: ${response.statusCode}'); // Debugging line
       }
     }
   }
 
   Future<void> fetchEnrollmentDetails(String childId) async {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    print(
-        'Fetching enrollment details for child ID: $childId'); // Debugging line
     try {
       final response = await http
           .get(Uri.parse('http://10.0.2.2:3000/enroll_history_today/$childId'));
 
       if (response.statusCode == 200) {
-        print('Response body: ${response.body}'); // Debugging line
         if (response.body.isEmpty || response.body == 'null') {
           setState(() {
             selectedDetails = null;
           });
-          print('No enrollment details found.'); // Debugging line
           return;
         }
 
         List jsonResponse = json.decode(response.body);
-        print('Full JSON Response: $jsonResponse'); // Debugging line
 
         if (jsonResponse.isNotEmpty) {
           var todayEnrollments = jsonResponse.where((data) {
@@ -164,33 +157,22 @@ class _DashboardTabState extends State<DashboardTab> {
 
           if (todayEnrollments.isNotEmpty) {
             var data = todayEnrollments[0];
-            print('Today\'s enrollment details: $data'); // Debugging line
             setState(() {
               selectedDetails = EnrollmentDetails.fromJson(data);
-              fetchNotesToday(
-                  childId); // Ambil catatan hari ini setelah mendapatkan detail enroll
+              fetchNotesToday(childId);
             });
           } else {
-            print('No enrollments found for today.'); // Debugging line
             setState(() {
               selectedDetails = null;
             });
           }
         } else {
-          print('No enrollments found in response.'); // Debugging line
           setState(() {
             selectedDetails = null;
           });
         }
-      } else {
-        print(
-            'Failed to load enrollment details: ${response.statusCode}'); // Debugging line
-        setState(() {
-          selectedDetails = null;
-        });
       }
     } catch (e) {
-      print('Error fetching enrollment details: $e'); // Debugging line
       setState(() {
         selectedDetails = null;
       });
@@ -198,38 +180,129 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Future<void> fetchNotesToday(String childId) async {
-    print('Fetching notes for child ID: $childId'); // Debugging line
     final response =
         await http.get(Uri.parse('http://10.0.2.2:3000/notes_today/$childId'));
 
     if (response.statusCode == 200) {
-      print('Response body for notes: ${response.body}'); // Debugging line
-// Cek apakah body tidak null dan bukan 'null'
       if (response.body != 'null') {
         try {
-// Jika respons valid, decode ke List<dynamic>
           List<dynamic> notes = json.decode(response.body) as List<dynamic>;
-          print('Notes fetched: $notes'); // Debugging line
           setState(() {
-            notesToday = notes; // Simpan hasil catatan hari ini
+            notesToday = notes;
           });
         } catch (e) {
-          print('Error decoding notes: $e'); // Debugging line
           setState(() {
-            notesToday = []; // Set ke list kosong jika terjadi error
+            notesToday = [];
           });
         }
       } else {
-        print('No notes available for today.'); // Debugging line
         setState(() {
-          notesToday = []; // Set ke list kosong jika tidak ada catatan
+          notesToday = [];
         });
       }
+    }
+  }
+
+  void _showAccessCodeDialog(BuildContext context, String userId) {
+    final TextEditingController accessCodeController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Enter Access Code'),
+          content: TextField(
+            controller: accessCodeController,
+            decoration: const InputDecoration(hintText: "Access Code"),
+            obscureText: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final accessCode = accessCodeController.text;
+
+                // Validasi input
+                if (accessCode.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Access Code cannot be empty')),
+                  );
+                  return;
+                }
+
+                String? idDaycare = selectedDetails?.idDaycare;
+                if (idDaycare == null || idDaycare.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('ID Daycare is not available')),
+                  );
+                  Navigator.of(context).pop();
+                  return;
+                }
+
+                final cctvUrl =
+                    await fetchCCTVUrl(idDaycare, accessCode, userId);
+                print('CCTV URL: $cctvUrl'); // Tambahkan ini untuk debugging
+                if (cctvUrl != null && cctvUrl.isNotEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CCTVPage(videoUrl: cctvUrl),
+                    ),
+                  ).then((_) {
+                    // Pastikan untuk memeriksa jika navigasi berhasil
+                    print('Navigated to CCTVPage with URL: $cctvUrl');
+                  });
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('CCTV link not available')),
+                  );
+                }
+
+                // Pindahkan pop ke sini jika tidak ada masalah
+                Navigator.of(context).pop();
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<String?> fetchCCTVUrl(
+      String idDaycare, String accessCode, String userId) async {
+    if (idDaycare.isEmpty || accessCode.isEmpty || userId.isEmpty) {
+      print('Invalid parameters for fetching CCTV URL');
+      return null;
+    }
+
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:3000/cctv'),
+      body: jsonEncode({
+        "ID_Daycare": idDaycare,
+        "Access_Code": accessCode,
+        "ID_User": userId,
+      }),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      print('CCTV Response: $responseData');
+      return responseData['link_cctv'] ?? ''; // Pastikan key ini sesuai
     } else {
-      print('Failed to fetch notes: ${response.statusCode}'); // Debugging line
-      setState(() {
-        notesToday = []; // Set ke list kosong jika status code tidak 200
-      });
+      print('Failed to fetch CCTV link: ${response.statusCode}');
+      return null;
     }
   }
 
@@ -279,15 +352,13 @@ class _DashboardTabState extends State<DashboardTab> {
                       );
                     }).toList(),
                     onChanged: (String? value) {
-                      print('Selected kid: $value'); // Debugging line
                       setState(() {
                         selectedKid = value;
                         if (value != null) {
                           fetchEnrollmentDetails(value);
                         } else {
                           selectedDetails = null;
-                          notesToday =
-                              []; // Reset catatan hari ini jika tidak ada anak yang dipilih
+                          notesToday = [];
                         }
                       });
                     },
@@ -342,7 +413,7 @@ class _DashboardTabState extends State<DashboardTab> {
                 itemBuilder: (context, index) {
                   String title = items[index]['title'];
                   IconData icon = items[index]['icon'];
-                  String notes = 'No details available.'; // Default notes value
+                  String notes = 'No details available.';
 
                   if (selectedDetails != null) {
                     switch (title) {
@@ -350,55 +421,46 @@ class _DashboardTabState extends State<DashboardTab> {
                         notes = selectedDetails!.enrollDate.isNotEmpty
                             ? 'Check-In Time: ${selectedDetails!.enrollDate}\nCaretaker: ${selectedDetails!.enrollCaretaker}'
                             : 'No check-in details';
-                        print('Check-In notes: $notes'); // Debugging line
                         break;
                       case 'Mood':
                         notes = selectedDetails!.mood.isNotEmpty
                             ? 'Mood: ${selectedDetails!.mood}'
                             : 'No mood details';
-                        print('Mood notes: $notes'); // Debugging line
                         break;
                       case 'Food':
                         notes = selectedDetails!.food.isNotEmpty
                             ? 'Food: ${selectedDetails!.food}\nCaretaker: ${selectedDetails!.foodCaretaker}'
                             : 'No food details';
-                        print('Food notes: $notes'); // Debugging line
                         break;
                       case 'Snack':
                         notes = selectedDetails!.snack.isNotEmpty
                             ? 'Snack: ${selectedDetails!.snack}'
                             : 'No snack details';
-                        print('Snack notes: $notes'); // Debugging line
                         break;
                       case 'Sleep':
                         notes = selectedDetails!.sleep.isNotEmpty
                             ? 'Sleep: ${selectedDetails!.sleep}'
                             : 'No sleep details';
-                        print('Sleep notes: $notes'); // Debugging line
                         break;
                       case 'Medicine':
                         notes = selectedDetails!.medicine.isNotEmpty
                             ? 'Medicine: ${selectedDetails!.medicine}\nCaretaker: ${selectedDetails!.medicineCaretaker}'
                             : 'No medicine details';
-                        print('Medicine notes: $notes'); // Debugging line
                         break;
                       case 'Assignment':
                         notes = selectedDetails!.assignment.isNotEmpty
                             ? 'Assignment: ${selectedDetails!.assignment}\nCaretaker: ${selectedDetails!.assignmentCaretaker}'
                             : 'No assignment details';
-                        print('Assignment notes: $notes'); // Debugging line
                         break;
                       case 'Checkout':
                         notes = selectedDetails!.checkoutTime.isNotEmpty
                             ? 'Checkout Time: ${selectedDetails!.checkoutTime}\nCaretaker: ${selectedDetails!.checkoutCaretaker}'
                             : 'No checkout details';
-                        print('Checkout notes: $notes'); // Debugging line
                         break;
                       case 'Notes':
                         notes = selectedDetails!.enrollNote.isNotEmpty
                             ? 'Additional Notes: ${selectedDetails!.enrollNote}'
                             : 'No additional notes';
-                        print('Notes: $notes'); // Debugging line
                         break;
                       default:
                         notes = 'No details available';
@@ -424,7 +486,6 @@ class _DashboardTabState extends State<DashboardTab> {
               ),
             ),
             const SizedBox(height: 20),
-            // Menampilkan catatan hari ini di bawah daftar detail
             if (notesToday.isNotEmpty)
               Container(
                 padding: const EdgeInsets.all(10),
@@ -436,7 +497,7 @@ class _DashboardTabState extends State<DashboardTab> {
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 5,
-                      offset: const Offset(0, 3), // changes position of shadow
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -466,6 +527,16 @@ class _DashboardTabState extends State<DashboardTab> {
           ],
         ),
       ),
+      floatingActionButton: selectedDetails != null
+          ? FloatingActionButton(
+              onPressed: () {
+                String userId = UserSingleton().user?.id ?? '';
+                _showAccessCodeDialog(context, userId);
+              },
+              backgroundColor: Colors.blue,
+              child: const Icon(Icons.videocam),
+            )
+          : null,
     );
   }
 }
