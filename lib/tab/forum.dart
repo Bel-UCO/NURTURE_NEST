@@ -51,6 +51,10 @@ class _ForumTabState extends State<ForumTab> {
     // TODO: Implementasi membuka chat dengan pengguna
   }
 
+  String formatUserName(String name) {
+    return name.length > 10 ? '${name.substring(0, 10)}...' : name;
+  }
+
   void _showReplyDialog(int postId) {
     TextEditingController commentController = TextEditingController();
 
@@ -117,105 +121,120 @@ class _ForumTabState extends State<ForumTab> {
     );
   }
 
-  String formatUserName(String name) {
-    return name.length > 10 ? '${name.substring(0, 10)}...' : name;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFE9DFF4),
-      body: Column(
+    return Container(
+      color: Color(0xFFE9DFF4), // Warna latar belakang
+      child: Stack(
         children: [
-          SizedBox(height: 10),
-          Container(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'CHAT',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-          ),
-          SizedBox(
-            height: 80,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: users.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () => openChat(users[index]['name']),
-                  child: Container(
-                    width: 70,
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          backgroundImage: AssetImage(users[index]['image']),
-                          radius: 30,
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          formatUserName(users[index]['name']),
-                          maxLines: 1,
-                          overflow: TextOverflow.fade,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          SizedBox(height: 20),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Text(
-              'FORUM',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-          ),
-          // Gunakan Flexible untuk mencegah overflow
-          Expanded(
-            child: ListView.builder(
-              itemCount: posts.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: ExpansionTile(
-                    title: Text(posts[index]['userName']),
-                    subtitle: Text(posts[index]['date']),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
+          Column(
+            children: [
+              // Bagian CHAT
+              SizedBox(height: 10), // Padding atas untuk chat
+              Container(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'CHAT',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              ),
+              SizedBox(
+                height: 80,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: users.length,
+                  // Inside the ListView.builder for users
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () => openChat(users[index]['name']),
+                      child: Container(
+                        width: 70,
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              posts[index]['content'],
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                            CircleAvatar(
+                              backgroundImage:
+                                  AssetImage(users[index]['image']),
+                              radius: 30,
+                            ),
+                            SizedBox(height: 4),
+                            Flexible(
+                              child: Text(
+                                formatUserName(users[index]['name']),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 12), // Ukuran font lebih kecil
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          _showReplyDialog(posts[index]['postId']);
-                        },
-                        child: Text('Reply'),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 20),
+              // Bagian FORUM
+              Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0), // Mengurangi padding vertikal
+                child: Text(
+                  'FORUM',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              ),
+              // List Post
+              Expanded(
+                // Ganti SingleChildScrollView dengan Expanded
+                child: ListView.builder(
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      child: ExpansionTile(
+                        title: Text(posts[index]['userName']),
+                        subtitle: Text(posts[index]['date']),
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  posts[index]['content'],
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              _showReplyDialog(posts[index]['postId']);
+                            },
+                            child: Text('Reply'),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          // Floating Action Button untuk Create Post
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton.extended(
+              onPressed: _showCreatePostDialog,
+              label: Text('POST'),
+              icon: Icon(Icons.add),
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreatePostDialog,
-        label: Text('POST'),
-        icon: Icon(Icons.add),
       ),
     );
   }

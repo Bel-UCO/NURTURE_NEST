@@ -38,8 +38,8 @@ class ChatPage extends StatelessWidget {
                         ? Alignment.centerRight
                         : Alignment.centerLeft,
                     child: Container(
-                      padding: EdgeInsets.all(10),
-                      margin: EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.symmetric(vertical: 4),
                       decoration: BoxDecoration(
                         color: messages[index]['sender'] == 'user'
                             ? Colors.blue[100]
@@ -48,7 +48,7 @@ class ChatPage extends StatelessWidget {
                       ),
                       child: Text(
                         messages[index]['message']!,
-                        style: TextStyle(fontSize: 16),
+                        style: const TextStyle(fontSize: 16),
                       ),
                     ),
                   ),
@@ -60,7 +60,7 @@ class ChatPage extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
-                Expanded(
+                const Expanded(
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Type a message...',
@@ -69,7 +69,7 @@ class ChatPage extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.send),
+                  icon: const Icon(Icons.send),
                   onPressed: () {
                     // TODO: Kirim pesan
                   },
