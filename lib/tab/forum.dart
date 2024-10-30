@@ -1,178 +1,222 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
-class ForumTab extends StatelessWidget {
+class ForumTab extends StatefulWidget {
   const ForumTab({super.key});
+
+  @override
+  _ForumTabState createState() => _ForumTabState();
+}
+
+class _ForumTabState extends State<ForumTab> {
+  List<Map<String, dynamic>> users = [
+    {'name': 'Dr. Blblabla', 'image': 'assets/dummy_image/notes1.png'},
+    {
+      'name': 'Dr. Longnamewithmorethan10characters',
+      'image': 'assets/dummy_image/notes2.png'
+    },
+    {'name': 'Dr. Smith', 'image': 'assets/dummy_image/notes3.png'},
+  ];
+
+  List<Map<String, dynamic>> posts = []; // List untuk menyimpan post
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPosts(); // Panggil fungsi untuk mengambil post
+  }
+
+  Future<void> fetchPosts() async {
+    // Simulasikan dengan data dummy
+    posts = List.generate(
+        20,
+        (index) => {
+              'userName': 'User $index',
+              'content':
+                  'Ini adalah isi post ke-$index yang cukup panjang untuk ditampilkan, lebih dari dua baris.',
+              'date': DateTime.now().subtract(Duration(days: index)).toString(),
+              'postId': index, // ID post untuk mengambil komen
+            });
+    setState(() {});
+  }
+
+  void createPost(String content) {
+    // TODO: Implementasi API untuk mengirim post baru
+  }
+
+  void createComment(int postId, String comment) {
+    // TODO: Implementasi API untuk mengirim komentar baru
+  }
+
+  void openChat(String userName) {
+    // TODO: Implementasi membuka chat dengan pengguna
+  }
+
+  void _showReplyDialog(int postId) {
+    TextEditingController commentController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Reply to Post'),
+          content: TextField(
+            controller: commentController,
+            decoration: InputDecoration(hintText: 'Type your comment here...'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Kirim komentar dengan API
+                createComment(postId, commentController.text);
+                Navigator.of(context).pop();
+              },
+              child: Text('Send'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCreatePostDialog() {
+    TextEditingController postController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Create Post'),
+          content: TextField(
+            controller: postController,
+            decoration: InputDecoration(hintText: 'What\'s on your mind?'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Kirim post baru dengan API
+                createPost(postController.text);
+                Navigator.of(context).pop();
+              },
+              child: Text('Post'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String formatUserName(String name) {
+    return name.length > 10 ? '${name.substring(0, 10)}...' : name;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context); // Navigate back
-          },
-        ),
-        title: const Text("Profile"),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      extendBodyBehindAppBar: true,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Stack(
-              children: [
-                Image.asset(
-                  'assets/background.jpg', // Replace with your image asset
-                  width: double.infinity,
-                  height: 250,
-                  fit: BoxFit.cover,
-                ),
-                Positioned(
-                  bottom: 0,
-                  left: MediaQuery.of(context).size.width / 2 - 50,
-                  child: const CircleAvatar(
-                    radius: 50,
-                    backgroundImage: AssetImage('assets/profile.jpg'), // Replace with your profile image asset
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 60),
-            const Text(
-              "Ramesh Mana",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Text(
-              "Manager",
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 20),
-            UserInfoExpansionTile(
-              title: 'Contact Information',
-              icon: Icons.contact_mail,
-              children: [
-                UserInfoTile(
-                  title: 'Email',
-                  content: 'sudeptech@gmail.com',
-                  buttonText: 'Send Email',
-                  onPressed: () {
-                    // Action for sending email
-                    print('Email button pressed');
-                  },
-                ),
-                UserInfoTile(
-                  title: 'Phone',
-                  content: '99--99876-56',
-                  buttonText: 'Call',
-                  onPressed: () {
-                    // Action for calling
-                    print('Call button pressed');
-                  },
-                ),
-              ],
-            ),
-            const UserInfoExpansionTile(
-              title: 'About Me',
-              icon: Icons.person,
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Text(
-                    'This is about me link and you can know about me in this section.',
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class UserInfoExpansionTile extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final List<Widget> children;
-
-  const UserInfoExpansionTile({super.key, 
-    required this.title,
-    required this.icon,
-    required this.children,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-      child: Card(
-        color: Colors.grey[100],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: Colors.grey.shade300, width: 1),
-        ),
-        child: ExpansionTile(
-          leading: Icon(icon),
-          title: Text(title, style: const TextStyle(fontSize: 16)),
-          children: children,
-        ),
-      ),
-    );
-  }
-}
-
-class UserInfoTile extends StatelessWidget {
-  final String title;
-  final String content;
-  final String buttonText;
-  final VoidCallback onPressed;
-
-  const UserInfoTile({super.key, 
-    required this.title,
-    required this.content,
-    required this.buttonText,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Color(0xFFE9DFF4),
+      body: Column(
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          SizedBox(height: 10),
+          Container(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'CHAT',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
           ),
-          Text(
-            content,
-            style: const TextStyle(color: Colors.black54),
+          SizedBox(
+            height: 80,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () => openChat(users[index]['name']),
+                  child: Container(
+                    width: 70,
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: AssetImage(users[index]['image']),
+                          radius: 30,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          formatUserName(users[index]['name']),
+                          maxLines: 1,
+                          overflow: TextOverflow.fade,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-          const SizedBox(height: 5),
-          ElevatedButton(
-            onPressed: onPressed,
-            child: Text(buttonText),
+          SizedBox(height: 20),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Text(
+              'FORUM',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ),
+          // Gunakan Flexible untuk mencegah overflow
+          Expanded(
+            child: ListView.builder(
+              itemCount: posts.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  child: ExpansionTile(
+                    title: Text(posts[index]['userName']),
+                    subtitle: Text(posts[index]['date']),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              posts[index]['content'],
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          _showReplyDialog(posts[index]['postId']);
+                        },
+                        child: Text('Reply'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showCreatePostDialog,
+        label: Text('POST'),
+        icon: Icon(Icons.add),
+      ),
     );
   }
-}
-
-void main() {
-  DateTime now = DateTime.now();
-  String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-  print('Current date and time: $formattedDate');
 }
